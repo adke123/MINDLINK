@@ -66,7 +66,22 @@
 
 ### Database & AI
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI-4285F4?style=flat-square&logo=google&logoColor=white)
+
+---
+
+## 📸 스크린샷
+
+### 👴 시니어 화면
+| 홈 | AI 대화 | 인지 게임 |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/senior-home.jpg" width="250"/> | <img src="docs/screenshots/senior-chat.jpg" width="250"/> | <img src="docs/screenshots/senior-game.jpg" width="250"/> |
+
+### 👨‍👩‍👧 보호자 화면
+| 대시보드 | 감정 분석 | 추억 앨범 |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/guardian-home.jpg" width="250"/> | <img src="docs/screenshots/guardian-report.jpg" width="250"/> | <img src="docs/screenshots/guardian-memory.jpg" width="250"/> |
 
 ---
 
@@ -94,8 +109,7 @@ mindlink/
 │   │   └── schema.prisma      # DB 스키마
 │   └── package.json
 │
-└── 📂 ai-server/              # Flask AI 서버 (선택)
-    └── app.py
+└── README.md
 ```
 
 ---
@@ -104,15 +118,15 @@ mindlink/
 
 ### 1. 저장소 클론
 ```bash
-git clone https://github.com/your-username/mindlink.git
-cd mindlink
+git clone https://github.com/adke123/MINDLINK.git
+cd MINDLINK
 ```
 
 ### 2. 환경 변수 설정
 
 **server/.env**
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/mindlink"
+DATABASE_URL="postgresql://..."  # Supabase 연결 문자열
 JWT_SECRET="your-secret-key"
 GEMINI_API_KEY="your-gemini-api-key"
 ```
@@ -148,20 +162,6 @@ npm run dev
 
 ---
 
-## 📸 스크린샷
-
-### 시니어 화면
-| 홈 | AI 대화 | 인지 게임 |
-|:---:|:---:|:---:|
-| ![홈](docs/screenshots/senior-home.png) | ![AI대화](docs/screenshots/senior-chat.png) | ![게임](docs/screenshots/senior-game.png) |
-
-### 보호자 화면
-| 대시보드 | 감정 리포트 | 추억 앨범 |
-|:---:|:---:|:---:|
-| ![대시보드](docs/screenshots/guardian-home.png) | ![리포트](docs/screenshots/guardian-report.png) | ![앨범](docs/screenshots/guardian-memory.png) |
-
----
-
 ## 🔮 향후 계획
 
 - [ ] 음성 인식 대화 기능
@@ -172,24 +172,22 @@ npm run dev
 
 ---
 
-## 👥 팀원
+## 👥 개발자
 
 | 역할 | 이름 | GitHub |
 |------|------|--------|
-| 풀스택 개발 | 조건희 | [https://github.com/adke123] |
+| 풀스택 개발 | adke123 | [@adke123](https://github.com/adke123) |
 
 ---
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고해주세요.
+이 프로젝트는 MIT 라이선스를 따릅니다.
 
 ---
 
 <div align="center">
 
 **마음이음** - 기술로 세대를 연결합니다 💜
-
-[🌐 데모 사이트](https://mindlink-demo.vercel.app) · [📧 문의하기](mailto:your-email@example.com)
 
 </div>

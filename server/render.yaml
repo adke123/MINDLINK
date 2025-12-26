@@ -1,42 +1,16 @@
-# render.yaml - Render 배포 설정
-
 services:
-  # API 서버
   - type: web
     name: mindlink-api
     env: node
     region: singapore
-    plan: free
     buildCommand: npm install && npx prisma generate
-    startCommand: npm start
-    healthCheckPath: /health
+    startCommand: node src/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: mindlink-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
-        generateValue: true
-      - key: CLIENT_URL
-        value: https://mindlink-client.vercel.app
-
-  # AI 서버 (감정 분석)
-  - type: web
-    name: mindlink-ai
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
-    healthCheckPath: /api/health
-    envVars:
-      - key: PORT
-        value: 5001
-
-databases:
-  - name: mindlink-db
-    databaseName: mindlink
-    plan: free
-    region: singapore
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
