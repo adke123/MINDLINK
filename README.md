@@ -176,7 +176,7 @@ npm run dev
 
 | 역할 | 이름 | GitHub |
 |------|------|--------|
-| 풀스택 개발 | 홍길동 | [@github](https://github.com/) |
+| 풀스택 개발 | 조건 | [@github]([https://github.com/](https://github.com/adke123)) |
 
 ---
 
