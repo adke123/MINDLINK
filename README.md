@@ -176,7 +176,7 @@ npm run dev
 
 | 역할 | 이름 | GitHub |
 |------|------|--------|
-| 풀스택 개발 | 조건 | [@github]([https://github.com/](https://github.com/adke123)) |
+| 풀스택 개발 | 조건희 | [@github]([https://github.com/adke123]) |
 
 ---
 
