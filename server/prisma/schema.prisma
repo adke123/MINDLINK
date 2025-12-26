@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  password       String
+  name           String
+  role           String    @default("senior")
+  phone          String?
+  birthDate      DateTime?
+  connectionCode String?   @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  conversations    Conversation[]
+  emotionLogs      EmotionLog[]
+  gameResults      GameResult[]
+  memories         Memory[]
+  medications      Medication[]
+  medicationLogs   MedicationLog[]
+  schedules        Schedule[]
+  
+  connectionsAsSenior   Connection[] @relation("SeniorConnections")
+  connectionsAsGuardian Connection[] @relation("GuardianConnections")
+  
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  sentNotifications Notification[] @relation("SentNotifications")
+  receivedNotifications Notification[] @relation("ReceivedNotifications")
+}
+
+model Connection {
+  id          Int      @id @default(autoincrement())
+  seniorId    Int
+  guardianId  Int
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  senior   User @relation("SeniorConnections", fields: [seniorId], references: [id])
+  guardian User @relation("GuardianConnections", fields: [guardianId], references: [id])
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  role      String
+  content   String
+  emotion   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model EmotionLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  emotion    String
+  confidence Float?
+  context    String?
+  emotions   Json?
+  detectedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model GameResult {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  gameType   String
+  score      Int
+  duration   Int?
+  difficulty String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Memory {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String?
+  description String?  // ★★★ 추가: 댓글 저장용 ★★★
+  imageUrl    String?  // ★★★ 수정: nullable로 변경 ★★★
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Medication {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  name      String
+  dosage    String?
+  frequency String?
+  times     String[]
+  startDate DateTime?
+  endDate   DateTime?
+  notes     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User            @relation(fields: [userId], references: [id])
+  logs MedicationLog[]
+}
+
+model MedicationLog {
+  id           Int       @id @default(autoincrement())
+  medicationId Int
+  userId       Int
+  scheduledFor DateTime
+  takenAt      DateTime?
+  status       String    @default("pending")
+  createdAt    DateTime  @default(now())
+
+  medication Medication @relation(fields: [medicationId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+}
+
+model Schedule {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  description String?
+  location    String?
+  startTime   DateTime
+  endTime     DateTime?
+  reminder    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  roomId    String
+  senderId  Int
+  content   String
+  createdAt DateTime @default(now())
+
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  fromId    Int?
+  toId      Int
+  type      String
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  from User? @relation("SentNotifications", fields: [fromId], references: [id])
+  to   User  @relation("ReceivedNotifications", fields: [toId], references: [id])
+}

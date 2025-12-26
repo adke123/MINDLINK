@@ -1,0 +1,160 @@
+# =============================================
+# 마음이음 (MindLink) - 통합 .gitignore
+# =============================================
+
+# =============================================
+# Dependencies (의존성)
+# =============================================
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# =============================================
+# Environment Variables (환경 변수) - 중요!
+# =============================================
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+client/.env
+server/.env
+ai-server/.env
+
+# =============================================
+# Build Outputs (빌드 결과물)
+# =============================================
+dist/
+build/
+out/
+.next/
+client/dist/
+server/dist/
+
+# =============================================
+# Logs (로그 파일)
+# =============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =============================================
+# IDE & Editor (에디터 설정)
+# =============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# =============================================
+# OS Generated Files (운영체제 생성 파일)
+# =============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================
+# Testing (테스트)
+# =============================================
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+
+# =============================================
+# Database (데이터베이스)
+# =============================================
+*.sqlite
+*.sqlite3
+*.db
+prisma/migrations/dev/
+*.sql.backup
+
+# =============================================
+# Uploads (업로드 파일)
+# =============================================
+server/uploads/*
+!server/uploads/.gitkeep
+uploads/
+!uploads/.gitkeep
+
+# =============================================
+# Cache (캐시)
+# =============================================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# =============================================
+# Temporary Files (임시 파일)
+# =============================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# =============================================
+# Prisma
+# =============================================
+# prisma/migrations/ # 마이그레이션은 보통 커밋함
+
+# =============================================
+# Python (AI 서버용)
+# =============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+htmlcov/
+.pytest_cache/
+*.egg-info/
+.eggs/
+*.egg
+
+# =============================================
+# Misc (기타)
+# =============================================
+*.pem
+*.key
+*.cert
+.vercel
+.netlify
+.turbo
