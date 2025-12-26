@@ -113,8 +113,8 @@ ${messages.slice(-5).map(m => `${m.role === 'user' ? '어르신' : '마음이'}:
             { role: 'user', parts: [{ text: userMessage }] }
           ],
           generationConfig: { 
-            temperature: 0.85, 
-            maxOutputTokens: 1024 
+            temperature: 1.0, 
+            maxOutputTokens: 2048
           }
         })
       }

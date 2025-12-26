@@ -7,6 +7,12 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
+<div align="center">
+
+### 🌐 [Live Demo](https://mindlink-rouge.vercel.app)
+
+</div>
+
 ---
 
 ## 📖 프로젝트 소개
@@ -162,6 +168,15 @@ npm run dev
 
 ---
 
+## 🌐 배포
+
+| 서비스 | URL |
+|--------|-----|
+| **Frontend** | https://mindlink-rouge.vercel.app |
+| **Backend API** | https://mindlink-2ckj.onrender.com |
+
+---
+
 ## 🔮 향후 계획
 
 - [ ] 음성 인식 대화 기능
@@ -189,5 +204,7 @@ npm run dev
 <div align="center">
 
 **마음이음** - 기술로 세대를 연결합니다 💜
+
+[🌐 Live Demo](https://mindlink-rouge.vercel.app) · [📧 문의하기](mailto:csn135790@gmail.com)
 
 </div>
