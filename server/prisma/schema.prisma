@@ -23,6 +23,7 @@ model User {
   emotionLogs      EmotionLog[]
   gameResults      GameResult[]
   memories         Memory[]
+  memoryComments   MemoryComment[]
   medications      Medication[]
   medicationLogs   MedicationLog[]
   schedules        Schedule[]
@@ -83,14 +84,26 @@ model GameResult {
 }
 
 model Memory {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  title       String?
-  description String?  // ★★★ 추가: 댓글 저장용 ★★★
-  imageUrl    String?  // ★★★ 수정: nullable로 변경 ★★★
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  category  String   @default("기타")
+  content   String?  @db.Text
+  imageUrl  String?  @db.Text
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+  comments MemoryComment[]
+}
+
+model MemoryComment {
+  id        Int      @id @default(autoincrement())
+  memoryId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
 }
 
 model Medication {

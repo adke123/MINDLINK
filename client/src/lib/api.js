@@ -44,7 +44,7 @@ export const authAPI = {
   me: () => fetchAPI('/api/auth/me'),
 };
 
-// Chat API
+// Chat API (추가됨)
 export const chatAPI = {
   getRooms: () => fetchAPI('/api/chat/rooms'),
   
@@ -57,20 +57,10 @@ export const chatAPI = {
       body: JSON.stringify({ content }),
     }),
     
-  createRoom: (participantIds, name, type = 'direct') => 
+  createRoom: (participantIds) => 
     fetchAPI('/api/chat/rooms', {
       method: 'POST',
-      body: JSON.stringify({ participantIds, name, type }),
-    }),
-    
-  getContacts: () => fetchAPI('/api/chat/contacts'),
-  
-  getFriends: () => fetchAPI('/api/chat/friends'),
-  
-  addFriend: (friendCode) => 
-    fetchAPI('/api/chat/friends', {
-      method: 'POST',
-      body: JSON.stringify({ friendCode }),
+      body: JSON.stringify({ participantIds }),
     }),
 };
 
@@ -126,38 +116,30 @@ export const gamesAPI = {
 export const memoryAPI = {
   getList: (seniorId) => 
     fetchAPI(`/api/memories?${seniorId ? `seniorId=${seniorId}` : ''}`),
-    
-  create: (formData) => {
-    const token = JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    return fetch(`${API_URL}/api/memories`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    }).then(res => res.json());
-  },
   
-  // ★★★ 시니어를 위한 추억 생성 (보호자가 사용) ★★★
-  createForSenior: (formData, seniorId) => {
-    const token = JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    return fetch(`${API_URL}/api/memories?seniorId=${seniorId}`, {
+  // 본인 추억 저장
+  save: (category, content, imageUrl) =>
+    fetchAPI('/api/memories', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    }).then(res => res.json());
-  },
+      body: JSON.stringify({ category, content, imageUrl }),
+    }),
   
-  delete: (id) => 
-    fetchAPI(`/api/memories/${id}`, { method: 'DELETE' }),
-    
+  // 보호자가 시니어의 추억에 추가
+  saveForSenior: (seniorId, category, content, imageUrl) =>
+    fetchAPI(`/api/memories/senior/${seniorId}`, {
+      method: 'POST',
+      body: JSON.stringify({ category, content, imageUrl }),
+    }),
+  
+  // 댓글 추가
   addComment: (memoryId, content) =>
     fetchAPI(`/api/memories/${memoryId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
+    
+  delete: (id) => 
+    fetchAPI(`/api/memories/${id}`, { method: 'DELETE' }),
 };
 
 // Connection API
@@ -245,7 +227,7 @@ export const reportAPI = {
     fetchAPI(`/api/reports/monthly?${seniorId ? `seniorId=${seniorId}` : ''}`),
 };
 
-// Alert API
+// Alert API (위험 알림)
 export const alertAPI = {
   getAlerts: () => fetchAPI('/api/alerts'),
   
