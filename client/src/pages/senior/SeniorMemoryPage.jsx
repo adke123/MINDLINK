@@ -1,10 +1,9 @@
-// client/src/pages/senior/SeniorMemoryPage.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { memoryAPI } from '../../lib/api';
 import { Image, Plus, X, Loader2, MessageCircle, Send, Camera } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// 1. 이미지 압축 라이브러리 임포트
+import imageCompression from 'browser-image-compression';
 
 const SeniorMemoryPage = () => {
   const { profile } = useAuthStore();
@@ -42,10 +41,7 @@ const SeniorMemoryPage = () => {
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('이미지는 5MB 이하로 선택해주세요');
-        return;
-      }
+      // 선택 시점에는 미리보기만 생성하고, 실제 압축은 업로드 버튼을 누를 때 진행합니다.
       setUploadData(prev => ({ ...prev, file }));
       const reader = new FileReader();
       reader.onload = (e) => setPreviewImage(e.target.result);
@@ -53,6 +49,7 @@ const SeniorMemoryPage = () => {
     }
   };
 
+  // 2. 이미지 압축 및 업로드 핸들러 수정
   const handleUpload = async () => {
     if (!uploadData.file && !uploadData.description) {
       alert('사진이나 내용을 추가해주세요');
@@ -61,73 +58,71 @@ const SeniorMemoryPage = () => {
 
     setIsSaving(true);
     const formData = new FormData();
+
+    // 이미지 압축 로직 적용
     if (uploadData.file) {
-      formData.append('image', uploadData.file);
+      try {
+        const options = {
+          maxSizeMB: 1,            // 최대 용량 1MB
+          maxWidthOrHeight: 1280,   // 가로/세로 최대 1280px
+          useWebWorker: true,      // 별도 스레드에서 처리하여 UI 버벅임 방지
+        };
+        
+        // 압축 수행
+        const compressedFile = await imageCompression(uploadData.file, options);
+        formData.append('image', compressedFile);
+      } catch (error) {
+        console.error("이미지 압축 실패:", error);
+        // 압축 실패 시 원본이라도 전송 시도
+        formData.append('image', uploadData.file);
+      }
     }
+    
     formData.append('title', uploadData.category || '추억');
     formData.append('description', uploadData.description || '');
 
     try {
       await memoryAPI.create(formData);
-      loadMemories();
+      await loadMemories();
       setShowUpload(false);
       setUploadData({ file: null, category: '가족', description: '' });
       setPreviewImage(null);
     } catch (error) {
+      console.error("업로드 실패:", error);
       alert('업로드에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
-  // ★★★ 댓글 추가 - API 호출 ★★★
   const handleAddComment = async () => {
     if (!newComment.trim() || !selectedMemory) return;
-    
     setIsAddingComment(true);
     try {
       const result = await memoryAPI.addComment(selectedMemory.id, newComment);
-      
       const comment = result.comment || {
         id: Date.now(),
         content: newComment,
         author: { name: profile?.name || '나' },
         createdAt: new Date().toISOString()
       };
-      
-      // 로컬 상태 업데이트
       setSelectedMemory({
         ...selectedMemory,
         comments: [...(selectedMemory.comments || []), comment]
       });
-      
-      // 목록도 업데이트
       setMemories(memories.map(m => 
-        m.id === selectedMemory.id 
-          ? { ...m, comments: [...(m.comments || []), comment] }
-          : m
+        m.id === selectedMemory.id ? { ...m, comments: [...(m.comments || []), comment] } : m
       ));
-      
       setNewComment('');
     } catch (e) {
-      console.error('댓글 추가 실패:', e);
       alert('댓글 추가에 실패했습니다');
     }
     setIsAddingComment(false);
   };
 
-  // 이미지 URL 처리
   const getImageUrl = (memory) => {
     if (!memory?.imageUrl) return null;
-    if (memory.imageUrl.startsWith('http://') || memory.imageUrl.startsWith('https://')) {
-      return memory.imageUrl;
-    }
-    if (memory.imageUrl.startsWith('data:')) {
-      return memory.imageUrl;
-    }
-    if (memory.imageUrl.startsWith('/')) {
-      return `${API_URL}${memory.imageUrl}`;
-    }
-    return `${API_URL}/uploads/${memory.imageUrl}`;
+    return memory.imageUrl;
   };
 
   if (isLoading) return (
@@ -149,7 +144,6 @@ const SeniorMemoryPage = () => {
         </button>
       </div>
 
-      {/* 추억 목록 */}
       {memories.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl">
           <Image className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -185,16 +179,8 @@ const SeniorMemoryPage = () => {
                     <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">
                       {memory.title || '추억'}
                     </span>
-                    {memory.comments?.length > 0 && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" /> {memory.comments.length}
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-gray-700 line-clamp-2">{memory.description || ''}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(memory.createdAt).toLocaleDateString('ko-KR')}
-                  </p>
                 </div>
               </button>
             );
@@ -202,23 +188,17 @@ const SeniorMemoryPage = () => {
         </div>
       )}
 
-      {/* 추억 작성 모달 */}
       {showUpload && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">📷 추억 남기기</h2>
-              <button onClick={() => { 
-                setShowUpload(false); 
-                setPreviewImage(null);
-                setUploadData({ file: null, category: '가족', description: '' });
-              }}>
+              <button onClick={() => { setShowUpload(false); setPreviewImage(null); }}>
                 <X className="w-6 h-6" />
               </button>
             </div>
             
             <div className="space-y-4">
-              {/* 카테고리 */}
               <div>
                 <label className="block text-sm font-medium mb-2">카테고리</label>
                 <div className="flex flex-wrap gap-2">
@@ -235,7 +215,6 @@ const SeniorMemoryPage = () => {
                 </div>
               </div>
 
-              {/* 사진 */}
               <div>
                 <label className="block text-sm font-medium mb-2">사진</label>
                 <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileSelect} className="hidden" />
@@ -259,7 +238,6 @@ const SeniorMemoryPage = () => {
                 )}
               </div>
 
-              {/* 내용 */}
               <div>
                 <label className="block text-sm font-medium mb-2">내용</label>
                 <textarea value={uploadData.description}
@@ -279,18 +257,16 @@ const SeniorMemoryPage = () => {
               </button>
               <button onClick={handleUpload} disabled={isSaving}
                 className="flex-1 py-3 bg-indigo-500 text-white font-bold rounded-xl disabled:opacity-50">
-                {isSaving ? '저장 중...' : '저장하기'}
+                {isSaving ? '압축 및 저장 중...' : '저장하기'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 추억 상세 모달 */}
       {selectedMemory && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-            {/* 헤더 */}
             <div className="p-4 border-b flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{categoryEmojis[selectedMemory.title] || '📝'}</span>
@@ -300,65 +276,17 @@ const SeniorMemoryPage = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-
+            
             <div className="flex-1 overflow-y-auto">
-              {/* 이미지 */}
               {getImageUrl(selectedMemory) && (
-                <img src={getImageUrl(selectedMemory)} alt="Memory" className="w-full h-72 object-cover"
-                  onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={getImageUrl(selectedMemory)} alt="Memory" className="w-full h-72 object-cover" />
               )}
-              
-              {/* 내용 */}
               <div className="p-4">
-                {selectedMemory.description && (
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedMemory.description}</p>
-                )}
+                <p className="text-gray-700 whitespace-pre-wrap">{selectedMemory.description}</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  {new Date(selectedMemory.createdAt).toLocaleDateString('ko-KR', {
-                    year: 'numeric', month: 'long', day: 'numeric'
-                  })}
+                  {new Date(selectedMemory.createdAt).toLocaleDateString('ko-KR')}
                 </p>
               </div>
-
-              {/* 댓글 */}
-              <div className="border-t p-4">
-                <h3 className="font-bold flex items-center gap-2 mb-3">
-                  <MessageCircle className="w-5 h-5" />
-                  댓글 {selectedMemory.comments?.length || 0}
-                </h3>
-                
-                {selectedMemory.comments?.length > 0 ? (
-                  <div className="space-y-3 mb-4">
-                    {selectedMemory.comments.map(c => (
-                      <div key={c.id} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium">{c.author?.name || '익명'}</span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(c.createdAt).toLocaleDateString('ko-KR')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700">{c.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm mb-4">댓글을 남겨보세요!</p>
-                )}
-              </div>
-            </div>
-
-            {/* 댓글 입력 */}
-            <div className="p-4 border-t flex gap-2">
-              <input type="text" value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isAddingComment && handleAddComment()}
-                placeholder="댓글을 입력하세요..."
-                className="flex-1 px-4 py-2 border rounded-xl"
-                disabled={isAddingComment} />
-              <button onClick={handleAddComment} disabled={!newComment.trim() || isAddingComment}
-                className="p-2 bg-indigo-500 text-white rounded-xl disabled:opacity-50">
-                {isAddingComment ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
             </div>
           </div>
         </div>

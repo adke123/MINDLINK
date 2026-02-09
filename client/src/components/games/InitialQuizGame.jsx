@@ -395,22 +395,21 @@ const InitialQuizGame = ({ difficulty = 'easy' }) => {
   };
 
   const generateQuiz = useCallback(() => {
-    // 랜덤 카테고리 선택
-    const randomCat = categories[Math.floor(Math.random() * categories.length)];
-    const catQuizzes = quizData[randomCat];
-    // 해당 카테고리 내 랜덤 문제 선택
-    const randomQuiz = catQuizzes[Math.floor(Math.random() * catQuizzes.length)];
-    
-    setCurrentQuiz({ ...randomQuiz, category: randomCat });
-    setAnswer('');
-    setFeedback(null);
-    setShowHints(false);
-    setHintsUsed(0);
-  }, [categories]);
+  const categories = Object.keys(quizData); 
+  const randomCat = categories[Math.floor(Math.random() * categories.length)];
+  const catQuizzes = quizData[randomCat];
+  const randomQuiz = catQuizzes[Math.floor(Math.random() * catQuizzes.length)];
+  
+  setCurrentQuiz({ ...randomQuiz, category: randomCat });
+  setAnswer('');
+  setFeedback(null);
+  setShowHints(false);
+  setHintsUsed(0);
+}, []);
 
   useEffect(() => {
-    generateQuiz();
-  }, [difficulty, generateQuiz]);
+  generateQuiz();
+}, []);
 
   const handleSubmit = async () => {
     if (feedback !== null || gameOver) return;

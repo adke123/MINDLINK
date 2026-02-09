@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { memoryAPI, connectionAPI } from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
 import { Plus, X, Image, MessageCircle, Send, Camera, Loader2 } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// 1. 이미지 압축 라이브러리 임포트
+import imageCompression from 'browser-image-compression';
 
 const GuardianMemoryPage = () => {
   const { profile } = useAuthStore();
@@ -59,25 +59,12 @@ const GuardianMemoryPage = () => {
 
   const getImageUrl = (memory) => {
     if (!memory?.imageUrl) return null;
-    if (memory.imageUrl.startsWith('http://') || memory.imageUrl.startsWith('https://')) {
-      return memory.imageUrl;
-    }
-    if (memory.imageUrl.startsWith('data:')) {
-      return memory.imageUrl;
-    }
-    if (memory.imageUrl.startsWith('/')) {
-      return `${API_URL}${memory.imageUrl}`;
-    }
-    return `${API_URL}/uploads/${memory.imageUrl}`;
+    return memory.imageUrl;
   };
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('이미지는 5MB 이하로 선택해주세요');
-        return;
-      }
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (e) => setPreviewImage(e.target.result);
@@ -85,6 +72,7 @@ const GuardianMemoryPage = () => {
     }
   };
 
+  // 2. 이미지 압축 로직이 포함된 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.content.trim() && !selectedFile) {
@@ -95,9 +83,23 @@ const GuardianMemoryPage = () => {
     setIsSaving(true);
     try {
       const formData = new FormData();
+      
+      // 이미지 압축 처리
       if (selectedFile) {
-        formData.append('image', selectedFile);
+        try {
+          const options = {
+            maxSizeMB: 1,            // 최대 1MB
+            maxWidthOrHeight: 1280,   // 최대 가로/세로 1280px
+            useWebWorker: true
+          };
+          const compressedFile = await imageCompression(selectedFile, options);
+          formData.append('image', compressedFile);
+        } catch (error) {
+          console.error("압축 실패, 원본 전송:", error);
+          formData.append('image', selectedFile);
+        }
       }
+
       formData.append('title', form.category);
       formData.append('description', form.content);
       
@@ -107,44 +109,36 @@ const GuardianMemoryPage = () => {
       setPreviewImage(null);
       setSelectedFile(null);
       setShowForm(false);
-      loadMemories();
+      await loadMemories();
     } catch (e) { 
       alert('저장에 실패했습니다');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
-  // ★★★ 댓글 추가 - API 호출 ★★★
   const handleAddComment = async () => {
     if (!comment.trim() || !selectedMemory) return;
-    
     setIsAddingComment(true);
     try {
       const result = await memoryAPI.addComment(selectedMemory.id, comment);
-      
-      // 성공 시 로컬 상태 업데이트
-      const newComment = result.comment || {
+      const newCommentData = result.comment || {
         id: Date.now(),
         content: comment,
         author: { name: profile?.name || '보호자' },
         createdAt: new Date().toISOString()
       };
-      
       setSelectedMemory({
         ...selectedMemory,
-        comments: [...(selectedMemory.comments || []), newComment]
+        comments: [...(selectedMemory.comments || []), newCommentData]
       });
-      
-      // 목록도 업데이트
       setMemories(memories.map(m => 
         m.id === selectedMemory.id 
-          ? { ...m, comments: [...(m.comments || []), newComment] }
+          ? { ...m, comments: [...(m.comments || []), newCommentData] }
           : m
       ));
-      
       setComment('');
     } catch (e) {
-      console.error('댓글 추가 실패:', e);
       alert('댓글 추가에 실패했습니다');
     }
     setIsAddingComment(false);
@@ -242,7 +236,7 @@ const GuardianMemoryPage = () => {
 
               <button type="submit" disabled={isSaving}
                 className="w-full py-3 bg-indigo-500 text-white font-bold rounded-xl disabled:opacity-50">
-                {isSaving ? '저장 중...' : '저장하기'}
+                {isSaving ? '압축 및 저장 중...' : '저장하기'}
               </button>
             </form>
           </div>
@@ -265,60 +259,14 @@ const GuardianMemoryPage = () => {
 
             <div className="flex-1 overflow-y-auto">
               {getImageUrl(selectedMemory) && (
-                <img src={getImageUrl(selectedMemory)} alt="Memory" className="w-full h-72 object-cover"
-                  onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={getImageUrl(selectedMemory)} alt="Memory" className="w-full h-72 object-cover" />
               )}
               <div className="p-4">
                 <p className="text-gray-700 whitespace-pre-wrap">{selectedMemory.description}</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  {new Date(selectedMemory.createdAt).toLocaleDateString('ko-KR', {
-                    year: 'numeric', month: 'long', day: 'numeric'
-                  })}
+                  {new Date(selectedMemory.createdAt).toLocaleDateString('ko-KR')}
                 </p>
               </div>
-
-              {/* 댓글 */}
-              <div className="border-t p-4">
-                <h3 className="font-bold flex items-center gap-2 mb-3">
-                  <MessageCircle className="w-5 h-5" />
-                  댓글 {selectedMemory.comments?.length || 0}
-                </h3>
-                
-                {selectedMemory.comments?.length > 0 ? (
-                  <div className="space-y-3 mb-4">
-                    {selectedMemory.comments.map(c => (
-                      <div key={c.id} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium">{c.author?.name || '익명'}</span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(c.createdAt).toLocaleDateString('ko-KR')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700">{c.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm mb-4">댓글을 남겨보세요!</p>
-                )}
-              </div>
-            </div>
-
-            {/* 댓글 입력 */}
-            <div className="p-4 border-t flex gap-2">
-              <input
-                type="text"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="따뜻한 댓글을 남겨주세요..."
-                className="flex-1 px-4 py-2 border rounded-xl"
-                onKeyPress={(e) => e.key === 'Enter' && !isAddingComment && handleAddComment()}
-                disabled={isAddingComment}
-              />
-              <button onClick={handleAddComment} disabled={!comment.trim() || isAddingComment}
-                className="p-2 bg-indigo-500 text-white rounded-xl disabled:opacity-50">
-                {isAddingComment ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
             </div>
           </div>
         </div>
@@ -343,7 +291,6 @@ const GuardianMemoryPage = () => {
                     <img src={imgUrl} alt="" className="w-full h-full object-cover" 
                       onError={(e) => { 
                         e.target.onerror = null;
-                        e.target.src = '';
                         e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100"><span class="text-5xl">${categoryEmojis[memory.title] || '📷'}</span></div>`;
                       }} />
                   </div>
@@ -357,16 +304,8 @@ const GuardianMemoryPage = () => {
                     <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">
                       {memory.title || '추억'}
                     </span>
-                    {memory.comments?.length > 0 && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" /> {memory.comments.length}
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-gray-700 line-clamp-2">{memory.description || '사진'}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(memory.createdAt).toLocaleDateString('ko-KR')}
-                  </p>
                 </div>
               </button>
             );
